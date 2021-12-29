@@ -60,7 +60,8 @@ end
 function update_grad(cone::Hyperbolicity{T})::Bool where T <: Real
     @assert cone.is_feasible
 
-    cone.grad = map((x)->x(variables(p)=> cone.point), differentiate(p, variables(p)))
+    cone.grad = map((x)->x(variables(p) => cone.point),
+                    differentiate(p, variables(p)))
     cone.grad /= p(variables(p)=>cone.point)
 
     cone.grad_updated = true
@@ -68,6 +69,21 @@ function update_grad(cone::Hyperbolicity{T})::Bool where T <: Real
 end
 
 function update_hess(cone::Nonnegative{T}) where T <: Real
-
+    @assert cone.grad_updated
+    isdefined(cone, :hess) || alloc_hess!(cone)
+    H = cone.hess.data
+    p = cone.polynomial
+    pval = p(variables(p) => cone.point)
+    @inbounds for i in 1:nvariables(p), j in i:nvariables(p)
+        ider = differentiate(p, variables(p)[i])
+        jder = differentiate(p, variables(p)[j])
+        ijder = differentiate(ider, variables(p)[j])
+        H[i,j] =
+            ider(variables(p) => cone.point) * der(variables(p) => cone.point) -
+            - pval => cone.point) * ijder(variables(p) => cone.point)
+    end
+    H /= pval^2
+    cone.hess_updated = true
+    return cone.hess
 end
 
