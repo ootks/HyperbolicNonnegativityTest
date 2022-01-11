@@ -1,6 +1,11 @@
 using LinearAlgebra
 using Hypatia
 using MultivariatePolynomials
+
+"""
+Hyperboicity cone of a hyperbolic polynomial 'polynomial' with respect to the
+direction 'direction'.
+"""
 mutable struct Hyperbolicity{T <: Real} <: Hypatia.Cones.Cone{T}
     polynomial::AbstractPolynomial{T}
     direction::Vector{T}
@@ -24,6 +29,7 @@ mutable struct Hyperbolicity{T <: Real} <: Hypatia.Cones.Cone{T}
     hess_fact::Factorization{T}
 
     symb_grad::Vector{AbstractPolynomial{T}}
+    symb_hess::Matrix{AbstractPolynomial{T}}
 
     dual_point::Vector{T}
     use_hess_prod_slow::Bool
@@ -61,6 +67,10 @@ function setup_extra_data!(cone::Hyperbolicity{T}) where T <: Real
         cone.poly_derivatives[i] = q
         q = cone.direction'differentiate(q, variables(q))
     end
+    cone.symb_grad = differentiate(p, variables(p))
+    @inbounds cone.symb_hess =
+        [differentiate(cone.symb_grad[i], variables(p)[j])
+         for i in 1:nvariables(p), j in i:nvariables(p)]
 end
 
 function set_initial_point!(arr::AbstractVector, cone::Hyperbolicity) 
@@ -82,7 +92,6 @@ function update_grad(cone::Hyperbolicity{T}) where T <: Real
     @assert cone.is_feas
 
     p = cone.polynomial
-    cone.symb_grad = differentiate(p, variables(p))
     cone.grad = -map((x)->x(variables(p) => cone.point), cone.symb_grad)
     cone.grad /= p(variables(p)=>cone.point)
 
@@ -102,11 +111,11 @@ function update_hess(cone::Hyperbolicity{T}) where T <: Real
     pval = p(variables(p) => cone.point)
 
     @inbounds for i in 1:nvariables(p), j in i:nvariables(p)
-        ijder = differentiate(cone.symb_grad[i], variables(p)[j])
-        H[i,j] -= ijder(variables(p) => cone.point) / pval
+        H[i,j] -= cone.symb_hess[i,j](variables(p) => cone.point) / pval
     end
     cone.hess_updated = true
     return cone.hess
 end
 
+# TODO: Add 3rd directional derivative information.
 use_dder3(cone::Hyperbolicity)::Bool = false

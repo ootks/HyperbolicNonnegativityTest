@@ -6,16 +6,17 @@ include("hyperbolicity.jl")
 # The Motzkin Polynomial
 #q = a^4*b^2+a^2*b^4+c^6-3.0*a^2*b^2*c^2
 
+# The Bezoutian matrix of the hyperbolic polynomial 'hyperbolic' with
+# respect to the directions 'direction' and 'u'
 function bezoutian(hyperbolic::Polynomial{true, T}, direction::Vector{T},
                    u::Vector) where T <: Real
-    # Make this name distinct, so that it's unlikely to collide with something
-    @polyvar t1231414 s12314151
-    t = t1231414
+    # Could be confusing if t or s are already variables in hyperbolic
+    # but the library seems to handle this fine.
+    @polyvar t s
     shift = variables(hyperbolic) + t * direction
     px = hyperbolic(variables(hyperbolic) => shift)
     d_upx = u'differentiate(px, variables(hyperbolic))
 
-    s = s12314151
     Bezoutian = div(px * subs(d_upx, t=>s) - d_upx  * subs(px, t=>s), t-s)
 
     deg = maxdegree(hyperbolic)
@@ -29,16 +30,8 @@ function bezoutian(hyperbolic::Polynomial{true, T}, direction::Vector{T},
     end
     return BezoutianMatrix
 end
-n = 4
-@polyvar x[1:n, 1:n] u[1:n,1:n]
-p = MultivariatePolynomials.LinearAlgebra.det([x[min(i,j),max(i,j)] for i=1:n, j=1:n])
-q = 5*x[1,2]^2+x[1,3]^2+x[1,4]^2
 
-bez = bezoutian(p, [i == j ? 1 : 0 for i=1:n for j=1:i], [u[i,j] for i=1:n for j=1:i])[3,3]
-zero_vars = [x[i,j] for i=1:n for j=1:i if i > 1 || j == 1]
-bez = subs(bez, zero_vars => zeros(Int64, length(zero_vars)))
-#display(bezoutian(p, [1,0,0,0], [u1,u2,u3,u4]))
-
+# Produces linear constraints for checking that 
 # constant is a constant polynomial
 # parameterized is a 
 # Both should be homogeneous
@@ -83,6 +76,16 @@ function equality(parameterized::Polynomial{true, T},
     end
     return (q_coefficients, p_coefficients, zero_coefficients)
 end
+n = 4
+@polyvar x[1:n, 1:n] u[1:n,1:n]
+p = MultivariatePolynomials.LinearAlgebra.det([x[min(i,j),max(i,j)] for i=1:n, j=1:n])
+q = x[1,2]^2+x[1,3]^2+x[1,4]^2
+
+bez = bezoutian(p, [i == j ? 1 : 0 for i=1:n for j=1:i], [u[i,j] for i=1:n for j=1:i])[3,3]
+zero_vars = [x[i,j] for i=1:n for j=1:i if i > 1 || j == 1]
+bez = subs(bez, zero_vars => zeros(Int64, length(zero_vars)))
+#display(bezoutian(p, [1,0,0,0], [u1,u2,u3,u4]))
+
 
 (b, A, z) = equality(bez, q,[u[i,j] for i=1:n for j=1:i])
 
@@ -95,10 +98,10 @@ b = vcat(b, zeros(Float64, length(z)))
 println(b)
 
 
-n = length([u[i,j] for i=1:n for j=1:i])
-c = zeros(Float64, n)
-G = -Matrix{Int}(I, n, n)
-h = zeros(Float64, n)
+m = length([u[i,j] for i=1:n for j=1:i])
+c = zeros(Float64, m)
+G = -Matrix{Int}(I, m, m)
+h = zeros(Float64, m)
 model = Hypatia.Models.Model{Float64}(c, A, b, G, h, cones)
 solver = Hypatia.Solvers.Solver{Float64}(verbose = true);
 Hypatia.Solvers.load(solver, model)
