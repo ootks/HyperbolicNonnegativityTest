@@ -1,0 +1,10 @@
+name = "HyperbolicNonnegativityTest"
+uuid = "c71073cb-66ca-4de3-ba5d-15ccaf6d2c72"
+authors = ["kshu <shu.kevins@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+DynamicPolynomials = "7c1d4256-1411-5781-91ec-d7bc3513ac07"
+Hypatia = "b99e6be6-89ff-11e8-14f8-45c827f4f8f2"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MultivariatePolynomials = "102ac46a-7ee4-5c85-9060-abc95bfdeaa3"

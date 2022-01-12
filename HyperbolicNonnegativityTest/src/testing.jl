@@ -1,8 +1,3 @@
-using Hypatia
-using LinearAlgebra
-using DynamicPolynomials
-
-#include("hyperbolicity.jl")
 # The Bezoutian matrix of the hyperbolic polynomial 'hyperbolic' with
 # respect to the directions 'direction' and 'u'
 function bezoutian(hyperbolic::Polynomial{true, T}, direction::Vector{T},
@@ -100,7 +95,7 @@ function nonnegativity_test(candidate::Polynomial{true, T},
                             direction::Vector{T},
                             F::Vector{Polynomial{true, T}},
                             g::Vector{Polynomial{true, T}}) where T <: Real
-    cones = [Hypatia.Cones.Hyperbolicity{T}(hyperbolic, direction)]
+    cones = [Hyperbolicity{T}(hyperbolic, direction)]
     m = length(direction)
 
     @polyvar u[1:length(direction)]

@@ -1,4 +1,6 @@
-include("nonnegativity_test.jl")
+using HyperbolicNonnegativityTest
+using MultivariatePolynomials
+using DynamicPolynomials
 
 # Uses the determinant to show that a sum-of-squares polynomial is nonnegative.
 n = 4
